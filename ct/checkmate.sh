@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+# source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+
+source <(curl -fsSL https://raw.githubusercontent.com/garethcheyne/ProxmoxVE/main/misc/build.func)
+
 # Copyright (c) 2021-2025 bluelabs
 # Author: https://bluewavelabs.ca/
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
