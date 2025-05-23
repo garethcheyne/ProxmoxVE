@@ -13,8 +13,39 @@ setting_up_container
 network_check
 update_os
 
-msg_info "Install Checkmk"
-# RELEASE=$(curl -fsSL https://api.github.com/repos/checkmk/checkmk/tags | grep "name" | awk '{print substr($2, 3, length($2)-4) }' | tr ' ' '\n' | grep -Ev 'rc|b' | sort -V | tail -n 1)
+msg_info "Install Checkmake"
+
+RELEASE_INFO=$(curl -fsSL https://api.github.com/repos/bluewave-labs/checkmate/releases/latest)
+RELEASE=$(echo "${RELEASE_INFO}" | grep '"tag_name":' | cut -d'"' -f4)
+RELEASE_ZIP=$(echo "${RELEASE_INFO}" | grep '"zipball_url":' | cut -d'"' -f4)
+
+mkdir -p /opt/checkmate
+
+# Download the release zip file
+curl -fsSL "${RELEASE_ZIP}" -o "checkmate-${RELEASE}.zip"
+
+# Extract directly to the /opt/checkmate directory
+unzip -q checkmate-"${RELEASE}".zip -d /tmp
+
+# Get the directory name that was created when unzipping
+EXTRACT_DIR=$(ls -d /tmp/*checkmate* | head -n 1)
+
+# Move the contents to /opt/checkmate
+cp -r "${EXTRACT_DIR}"/* /opt/checkmate/
+
+# Clean up
+rm -rf checkmate-"${RELEASE}".zip "${EXTRACT_DIR}"
+
+echo "${RELEASE}" >"/opt/checkmate_version.txt"
+
+msg_ok "Installed Checkmk"
+
+# motd_ssh
+# customize
+
+# msg_info "Creating Service"
+
+#RELEASE=$(curl -fsSL https://api.github.com/repos/checkmk/checkmk/tags | grep "name" | awk '{print substr($2, 3, length($2)-4) }' | tr ' ' '\n' | grep -Ev 'rc|b' | sort -V | tail -n 1)
 # curl -fsSL "https://download.checkmk.com/checkmk/${RELEASE}/check-mk-raw-${RELEASE}_0.bookworm_amd64.deb" -o "/opt/checkmk.deb"
 # $STD apt-get install -y /opt/checkmk.deb
 # echo "${RELEASE}" >"/opt/checkmk_version.txt"
