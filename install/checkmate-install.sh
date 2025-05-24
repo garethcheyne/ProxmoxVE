@@ -434,16 +434,7 @@ setup_ip_monitoring
 
 create_update_script
 
-# Display final information
 msg_info "Checkmate Installation Complete"
-msg_info "${INFO}${YW}Checkmate is now available at:${CL}"
-msg_info "${TAB}http://$(hostname -I | awk '{print $1}'):52345${CL}"
-msg_info "${INFO}${YW}Automatic updates:${CL}"
-msg_info "${TAB}- IP monitoring: Runs at boot and hourly"
-msg_info "${TAB}- Docker updates: Runs weekly on Sunday at 3:00 AM"
-msg_info "${INFO}${YW}Manual updates:${CL}"
-msg_info "${TAB}- IP update: Run /opt/checkmate/update-ip.sh"
-msg_info "${TAB}- Docker update: Run /usr/local/bin/update-checkmate.sh"
 
 motd_ssh
 
