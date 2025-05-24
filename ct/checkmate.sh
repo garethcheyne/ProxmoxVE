@@ -40,10 +40,10 @@ function update_script() {
     # Update the version file with the new release
     echo "${RELEASE}" >/opt/${APP}_version.txt
 
-    msg_ok "Started ${APP}"
-    msg_ok "Updated Successfully"
+    msg_ok "Started ${APP}${CL}"
+    msg_ok "Updated Successfully${CL}"
   else
-    msg_ok "No update required. ${APP} is already at ${RELEASE}"
+    msg_ok "No update required. ${APP} is already at ${RELEASE}${CL}"
   fi
   exit
 }
@@ -52,7 +52,7 @@ start
 build_container
 description
 
-msg_ok "Completed Successfully!\n"
+msg_ok "Completed Successfully!${CL}"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
 echo -e "${INFO}${YW} Access it using the following URL:${CL}"
-echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:8082${CL}"
+echo -e "${GATEWAY}${BGN}http://${IP}:52345${CL}"

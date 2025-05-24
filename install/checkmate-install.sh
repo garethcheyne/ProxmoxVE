@@ -6,12 +6,6 @@
 # Source: https://checkmate.so/
 
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
-color
-verb_ip6
-catch_errors
-setting_up_container
-network_check
-update_os
 
 function generate_jwt_secret() {
   msg_info "Generating secure JWT secret"
@@ -74,32 +68,6 @@ function install_docker() {
   fi
 }
 
-function install_checkmate() {
-
-  msg_info "Installing Checkmate"
-
-  # Check if Checkmate is already installed
-  if [[ -d /opt/checkmate ]]; then
-    msg_ok "Checkmate already installed"
-  else
-    # Create the Checkmate directory
-    mkdir -p /opt/checkmate
-
-    # Download the latest release zip file
-    RELEASE_INFO=$(curl -fsSL https://api.github.com/repos/bluewave-labs/checkmate/releases/latest)
-    RELEASE_ZIP=$(echo "${RELEASE_INFO}" | grep '"zipball_url":' | cut -d'"' -f4)
-    curl -fsSL "${RELEASE_ZIP}" -o /tmp/checkmate.zip
-
-    # Extract the zip file to the Checkmate directory
-    unzip -q /tmp/checkmate.zip -d /opt/checkmate
-
-    # Clean up
-    rm -f /tmp/checkmate.zip
-
-    msg_ok "Installed Checkmate"
-  fi
-}
-
 function create_env_file() {
   msg_info "Creating .env file"
 
@@ -111,7 +79,7 @@ function create_env_file() {
 
   # Create .env file with all required variables
   cat >/opt/checkmate/.env <<EOL
-UPTIME_APP_API_BASE_URL=http://${HOST_IP}:52345/api/v1
+UPTIME_APP_API_BASE_URL=/api/v1
 UPTIME_APP_CLIENT_HOST=http://${HOST_IP}
 CLIENT_HOST=http://${HOST_IP}
 DB_CONNECTION_STRING=mongodb://mongodb:27017/uptime_db?replicaSet=rs0
@@ -158,7 +126,7 @@ function update_dockercompose() {
   msg_ok "Updated Docker Compose file"
 }
 
-function install_checkmate_docker() {
+function install_checkmate() {
 
   msg_info "Installing Checkmate"
 
@@ -300,6 +268,7 @@ EOL
 
   msg_ok "Set up systemd service and timer for automatic IP updates"
 }
+
 function update_checkmate_docker() {
   msg_info "Updating Checkmate Docker containers"
 
@@ -426,12 +395,16 @@ function setup_ip_monitoring() {
   msg_info "IP monitoring setup complete"
 }
 
+color
+verb_ip6
+catch_errors
+setting_up_container
+network_check
+update_os
+
 install_docker
-
-install_checkmate_docker
-
+install_checkmate
 setup_ip_monitoring
-
 create_update_script
 
 msg_info "Checkmate Installation Complete"
