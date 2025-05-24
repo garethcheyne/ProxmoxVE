@@ -9,7 +9,7 @@ source <(curl -fsSL https://raw.githubusercontent.com/garethcheyne/ProxmoxVE/mai
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://github.com/kestra-io/kestra
 
-APP="Kestra"
+APP="kestra"
 var_tags="${var_tags:-rss-reader}"
 var_cpu="${var_cpu:-2}"
 var_ram="${var_ram:-2048}"
