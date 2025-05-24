@@ -7,9 +7,9 @@ source <(curl -fsSL https://raw.githubusercontent.com/garethcheyne/ProxmoxVE/mai
 # Copyright (c) 2021-2025 bluelabs
 # Author: https://bluewavelabs.ca/
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
-# Source: https://checkmate.so/
+# Source: https://github.com/kestra-io/kestra
 
-APP="CheckMate"
+APP="Kestra"
 var_tags="${var_tags:-rss-reader}"
 var_cpu="${var_cpu:-2}"
 var_ram="${var_ram:-2048}"
@@ -27,16 +27,16 @@ function update_script() {
   header_info
   check_container_storage
   check_container_resources
-  if [[ ! -d /opt/checkmate ]]; then
+  if [[ ! -d /opt/kestra ]]; then
     msg_error "No ${APP} Installation Found!"
     exit
   fi
 
-  RELEASE_INFO=$(curl -fsSL https://api.github.com/repos/bluewave-labs/checkmate/releases/latest)
+  RELEASE_INFO=$(curl -fsSL https://github.com/kestra-io/kestra/releases/latest)
   RELEASE=$(echo "${RELEASE_INFO}" | grep '"tag_name":' | cut -d'"' -f4)
 
   if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
-    /usr/local/bin/update-checkmate.sh
+    /usr/local/bin/update-kestra.sh
 
     # Update the version file with the new release
     echo "${RELEASE}" >/opt/${APP}_version.txt
