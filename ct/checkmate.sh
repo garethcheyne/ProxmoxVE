@@ -33,34 +33,13 @@ function update_script() {
 
   RELEASE_INFO=$(curl -fsSL https://api.github.com/repos/bluewave-labs/checkmate/releases/latest)
   RELEASE=$(echo "${RELEASE_INFO}" | grep '"tag_name":' | cut -d'"' -f4)
-  RELEASE_ZIP=$(echo "${RELEASE_INFO}" | grep '"zipball_url":' | cut -d'"' -f4)
 
   if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
-    msg_info "Stopping ${APP}"
-    systemctl stop checkmate
-    msg_ok "Stopped ${APP}"
+    /usr/local/bin/update-checkmate.sh
 
-    if ! [[ $(dpkg -s rsync 2>/dev/null) ]]; then
-      msg_info "Installing Dependencies"
-      $STD apt-get update
-      $STD apt-get install -y rsync
-      msg_ok "Installed Dependencies"
-    fi
-
-    msg_info "Updating ${APP} to ${RELEASE}"
-
-    curl -fsSL "${RELEASE_ZIP}" -o "checkmate-${RELEASE}.zip"
-    unzip -q checkmate-"${RELEASE}".zip
-
-    rsync -a --exclude 'data/' checkmate-"${RELEASE}"/ /opt/checkmate/
-
-    rm -rf checkmate-"${RELEASE}" checkmate-"${RELEASE}".zip
-
+    # Update the version file with the new release
     echo "${RELEASE}" >/opt/${APP}_version.txt
-    msg_ok "Updated ${APP} to ${RELEASE}"
 
-    msg_info "Starting ${APP}"
-    systemctl start commafeed
     msg_ok "Started ${APP}"
     msg_ok "Updated Successfully"
   else

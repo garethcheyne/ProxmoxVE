@@ -8,7 +8,7 @@
   "type": "ct",
   "updateable": true,
   "privileged": false,
-  "interface_port": 80,
+  "interface_port": 52345,
   "documentation": "https://github.com/bluewave-labs/checkmate",
   "website": "https://checkmate.so/",
   "logo": "https://checkmate.so/",

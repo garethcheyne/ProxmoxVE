@@ -13,6 +13,30 @@ setting_up_container
 network_check
 update_os
 
+function generate_jwt_secret() {
+  msg_info "Generating secure JWT secret"
+
+  # Generate a random 32-character string for JWT secret
+  # Using multiple sources of entropy for better randomness
+  if command -v openssl >/dev/null 2>&1; then
+    # Use OpenSSL if available (most secure)
+    JWT_SECRET=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32)
+  else
+    # Fallback to built-in bash methods
+    JWT_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)
+
+    # If /dev/urandom isn't available, use date+hostname as seed (least secure)
+    if [ -z "$JWT_SECRET" ]; then
+      JWT_SECRET=$(echo "$(date +%s%N)$HOSTNAME" | md5sum | head -c 32)
+    fi
+  fi
+
+  msg_ok "Generated secure JWT secret"
+
+  # Return the generated secret
+  echo "$JWT_SECRET"
+}
+
 function install_docker() {
   msg_info "Installing Docker"
 
@@ -82,6 +106,9 @@ function create_env_file() {
   # Get the IP address of the host
   HOST_IP=$(hostname -I | awk '{print $1}')
 
+  # Generate a secure JWT secret
+  JWT_SECRET=$(generate_jwt_secret)
+
   # Create .env file with all required variables
   cat >/opt/checkmate/.env <<EOL
 UPTIME_APP_API_BASE_URL=http://${HOST_IP}:52345/api/v1
@@ -89,7 +116,7 @@ UPTIME_APP_CLIENT_HOST=http://${HOST_IP}
 CLIENT_HOST=http://${HOST_IP}
 DB_CONNECTION_STRING=mongodb://mongodb:27017/uptime_db?replicaSet=rs0
 REDIS_URL=redis://redis:6379
-JWT_SECRET=my_secret
+JWT_SECRET=${JWT_SECRET}
 EOL
 
   msg_ok "Created .env file"
@@ -273,6 +300,121 @@ EOL
 
   msg_ok "Set up systemd service and timer for automatic IP updates"
 }
+function update_checkmate_docker() {
+  msg_info "Updating Checkmate Docker containers"
+
+  # Check if Checkmate is installed
+  if [[ ! -d /opt/checkmate ]]; then
+    msg_error "No Checkmate installation found!"
+    return 1
+  fi
+
+  # Navigate to the Checkmate directory
+  cd /opt/checkmate || exit
+
+  # Pull latest Docker images
+  msg_info "Pulling latest Docker images"
+  $STD docker-compose pull
+
+  # Stop existing containers
+  msg_info "Stopping current containers"
+  $STD docker-compose down
+
+  # Start containers with new images
+  msg_info "Starting containers with updated images"
+  $STD docker-compose up -d
+
+  # Update version timestamp
+  CHECKMATE_VERSION="$(date +%Y%m%d)"
+  echo "${CHECKMATE_VERSION}" >"/opt/checkmate_version.txt"
+
+  msg_ok "Updated Checkmate Docker containers"
+}
+# Create a separate update script that can be run later
+function create_update_script() {
+  msg_info "Creating update script"
+
+  cat >/usr/local/bin/update-checkmate.sh <<'EOL'
+#!/usr/bin/env bash
+
+# Log file for output
+LOG_FILE="/opt/checkmate/update.log"
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+
+# Function for logging
+log_message() {
+  echo "[$TIMESTAMP] $1" >> "$LOG_FILE"
+}
+
+log_message "Starting Checkmate update"
+
+# Check if Checkmate is installed
+if [[ ! -d /opt/checkmate ]]; then
+  log_message "ERROR: No Checkmate installation found!"
+  exit 1
+fi
+
+# Navigate to the Checkmate directory
+cd /opt/checkmate || exit
+
+# Pull latest Docker images
+log_message "Pulling latest Docker images"
+docker-compose pull
+
+# Stop existing containers
+log_message "Stopping current containers"
+docker-compose down
+
+# Start containers with new images
+log_message "Starting containers with updated images"
+docker-compose up -d
+
+# Update version timestamp
+CHECKMATE_VERSION="$(date +%Y%m%d)"
+echo "${CHECKMATE_VERSION}" >"/opt/checkmate_version.txt"
+
+log_message "Checkmate update completed successfully"
+echo "Checkmate update completed successfully. See ${LOG_FILE} for details."
+EOL
+
+  chmod +x /usr/local/bin/update-checkmate.sh
+
+  # Create a systemd service for updates
+  cat >/etc/systemd/system/checkmate-update.service <<EOL
+[Unit]
+Description=Checkmate Update Service
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/update-checkmate.sh
+WorkingDirectory=/opt/checkmate
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+  # Create a weekly timer for updates
+  cat >/etc/systemd/system/checkmate-update.timer <<EOL
+[Unit]
+Description=Run Checkmate Update weekly
+
+[Timer]
+OnCalendar=Sun 03:00:00
+Persistent=true
+Unit=checkmate-update.service
+
+[Install]
+WantedBy=timers.target
+EOL
+
+  # Enable the timer
+  systemctl daemon-reload
+  systemctl enable checkmate-update.timer
+  systemctl start checkmate-update.timer
+
+  msg_ok "Created update script at /usr/local/bin/update-checkmate.sh and scheduled weekly updates"
+}
 
 function setup_ip_monitoring() {
   # Create the update script
@@ -282,21 +424,26 @@ function setup_ip_monitoring() {
   setup_systemd_service
 
   msg_info "IP monitoring setup complete"
-  echo -e "${INFO}${YW}The script will automatically:${CL}"
-  echo -e "${TAB}- Check IP changes on boot"
-  echo -e "${TAB}- Run hourly to detect IP changes"
-  echo -e "${TAB}- Log all operations to /opt/checkmate/ip-update.log"
-  echo -e "${INFO}${YW}Manual execution:${CL}"
-  echo -e "${TAB}Run /opt/checkmate/update-ip.sh"
-  msg_ok "IP monitoring setup complete"
 }
 
-# Add this function call after installing Checkmate
 install_docker
 
 install_checkmate_docker
 
 setup_ip_monitoring
+
+create_update_script
+
+# Display final information
+msg_info "Checkmate Installation Complete"
+echo -e "${INFO}${YW}Checkmate is now available at:${CL}"
+echo -e "${TAB}${BGN}http://$(hostname -I | awk '{print $1}'):52345${CL}"
+echo -e "${INFO}${YW}Automatic updates:${CL}"
+echo -e "${TAB}- IP monitoring: Runs at boot and hourly"
+echo -e "${TAB}- Docker updates: Runs weekly on Sunday at 3:00 AM"
+echo -e "${INFO}${YW}Manual updates:${CL}"
+echo -e "${TAB}- IP update: Run /opt/checkmate/update-ip.sh"
+echo -e "${TAB}- Docker update: Run /usr/local/bin/update-checkmate.sh"
 
 motd_ssh
 
