@@ -437,7 +437,7 @@ create_update_script
 # Display final information
 msg_info "Checkmate Installation Complete"
 msg_info "${INFO}${YW}Checkmate is now available at:${CL}"
-msg_info "${TAB}${BGN}http://$(hostname -I | awk '{print $1}'):52345${CL}"
+msg_info "${TAB}http://$(hostname -I | awk '{print $1}'):52345${CL}"
 msg_info "${INFO}${YW}Automatic updates:${CL}"
 msg_info "${TAB}- IP monitoring: Runs at boot and hourly"
 msg_info "${TAB}- Docker updates: Runs weekly on Sunday at 3:00 AM"
