@@ -436,14 +436,14 @@ create_update_script
 
 # Display final information
 msg_info "Checkmate Installation Complete"
-echo -e "${INFO}${YW}Checkmate is now available at:${CL}"
-echo -e "${TAB}${BGN}http://$(hostname -I | awk '{print $1}'):52345${CL}"
-echo -e "${INFO}${YW}Automatic updates:${CL}"
-echo -e "${TAB}- IP monitoring: Runs at boot and hourly"
-echo -e "${TAB}- Docker updates: Runs weekly on Sunday at 3:00 AM"
-echo -e "${INFO}${YW}Manual updates:${CL}"
-echo -e "${TAB}- IP update: Run /opt/checkmate/update-ip.sh"
-echo -e "${TAB}- Docker update: Run /usr/local/bin/update-checkmate.sh"
+msg_info "${INFO}${YW}Checkmate is now available at:${CL}"
+msg_info "${TAB}${BGN}http://$(hostname -I | awk '{print $1}'):52345${CL}"
+msg_info "${INFO}${YW}Automatic updates:${CL}"
+msg_info "${TAB}- IP monitoring: Runs at boot and hourly"
+msg_info "${TAB}- Docker updates: Runs weekly on Sunday at 3:00 AM"
+msg_info "${INFO}${YW}Manual updates:${CL}"
+msg_info "${TAB}- IP update: Run /opt/checkmate/update-ip.sh"
+msg_info "${TAB}- Docker update: Run /usr/local/bin/update-checkmate.sh"
 
 motd_ssh
 
