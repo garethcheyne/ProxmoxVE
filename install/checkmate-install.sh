@@ -76,45 +76,49 @@ function install_checkmate() {
   fi
 }
 
-msg_info "Installing Checkmate"
+function install_checkmate_docker() {
 
-# Create directory for Checkmate
-mkdir -p /opt/checkmate
+  msg_info "Installing Checkmate"
 
-# Download the docker-compose.yaml file
-msg_info "Downloading Docker Compose configuration"
-curl -fsSL "https://raw.githubusercontent.com/bluewave-labs/Checkmate/develop/docker/dist-mono/docker-compose.yaml" -o "/opt/checkmate/docker-compose.yaml"
+  # Create directory for Checkmate
+  mkdir -p /opt/checkmate
 
-# Modify docker-compose.yaml to set environment variables
-msg_info "Configuring Docker Compose for external access"
+  # Download the docker-compose.yaml file
+  msg_info "Downloading Docker Compose configuration"
+  curl -fsSL "https://raw.githubusercontent.com/bluewave-labs/Checkmate/develop/docker/dist-mono/docker-compose.yaml" -o "/opt/checkmate/docker-compose.yaml"
 
-# Get the IP address of the host
-HOST_IP=$(hostname -I | awk '{print $1}')
+  # Modify docker-compose.yaml to set environment variables
+  msg_info "Configuring Docker Compose for external access"
 
-# Update the docker-compose.yaml file to use 0.0.0.0 binding for ports
-# and update environment variables to use the host IP
-sed -i "s/- \".*:52345\"/- \"0.0.0.0:52345:52345\"/" /opt/checkmate/docker-compose.yaml
-sed -i "s/- UPTIME_APP_API_BASE_URL=.*/- UPTIME_APP_API_BASE_URL=http:\/\/${HOST_IP}:52345\/api\/v1/" /opt/checkmate/docker-compose.yaml
-sed -i "s/- UPTIME_APP_CLIENT_HOST=.*/- UPTIME_APP_CLIENT_HOST=http:\/\/${HOST_IP}/" /opt/checkmate/docker-compose.yaml
-sed -i "s/- CLIENT_HOST=.*/- CLIENT_HOST=http:\/\/${HOST_IP}/" /opt/checkmate/docker-compose.yaml
+  # Get the IP address of the host
+  HOST_IP=$(hostname -I | awk '{print $1}')
 
-# Make sure the data directory exists with proper permissions
-mkdir -p /opt/checkmate/data
-chmod 777 /opt/checkmate/data
+  # Update the docker-compose.yaml file to use 0.0.0.0 binding for ports
+  # and update environment variables to use the host IP
+  sed -i "s/- \".*:52345\"/- \"0.0.0.0:52345:52345\"/" /opt/checkmate/docker-compose.yaml
+  sed -i "s/- UPTIME_APP_API_BASE_URL=.*/- UPTIME_APP_API_BASE_URL=http:\/\/${HOST_IP}:52345\/api\/v1/" /opt/checkmate/docker-compose.yaml
+  sed -i "s/- UPTIME_APP_CLIENT_HOST=.*/- UPTIME_APP_CLIENT_HOST=http:\/\/${HOST_IP}/" /opt/checkmate/docker-compose.yaml
+  sed -i "s/- CLIENT_HOST=.*/- CLIENT_HOST=http:\/\/${HOST_IP}/" /opt/checkmate/docker-compose.yaml
 
-# Start Checkmate services
-msg_info "Starting Checkmate services"
-cd /opt/checkmate || exit
-docker-compose up -d
+  # Make sure the data directory exists with proper permissions
+  mkdir -p /opt/checkmate/data
+  chmod 777 /opt/checkmate/data
 
-# Record the installation
-CHECKMATE_VERSION="$(date +%Y%m%d)"
-echo "${CHECKMATE_VERSION}" >"/opt/checkmate_version.txt"
+  # Start Checkmate services
+  msg_info "Starting Checkmate services"
+  cd /opt/checkmate || exit
+  docker-compose up -d
 
-msg_ok "Installed Checkmate"
+  # Record the installation
+  CHECKMATE_VERSION="$(date +%Y%m%d)"
+  echo "${CHECKMATE_VERSION}" >"/opt/checkmate_version.txt"
+
+  msg_ok "Installed Checkmate"
+}
 
 install_docker
-install_checkmate
+
+install_checkmate_docker
 
 motd_ssh
 
