@@ -51,44 +51,72 @@ function install_docker() {
 }
 
 function install_checkmate() {
+
   msg_info "Installing Checkmate"
 
-  # Create directory for Checkmate
-  mkdir -p /opt/checkmate
+  # Check if Checkmate is already installed
+  if [[ -d /opt/checkmate ]]; then
+    msg_ok "Checkmate already installed"
+  else
+    # Create the Checkmate directory
+    mkdir -p /opt/checkmate
 
-  # Download the docker-compose.yaml file
-  msg_info "Downloading Docker Compose configuration"
-  curl -fsSL "https://raw.githubusercontent.com/bluewave-labs/Checkmate/develop/docker/dist-mono/docker-compose.yaml" -o "/opt/checkmate/docker-compose.yaml"
+    # Download the latest release zip file
+    RELEASE_INFO=$(curl -fsSL https://api.github.com/repos/bluewave-labs/checkmate/releases/latest)
+    RELEASE_ZIP=$(echo "${RELEASE_INFO}" | grep '"zipball_url":' | cut -d'"' -f4)
+    curl -fsSL "${RELEASE_ZIP}" -o /tmp/checkmate.zip
 
-  # Make sure the data directory exists with proper permissions
-  mkdir -p /opt/checkmate/data
-  chmod 777 /opt/checkmate/data
+    # Extract the zip file to the Checkmate directory
+    unzip -q /tmp/checkmate.zip -d /opt/checkmate
 
-  # Start Checkmate services
-  msg_info "Starting Checkmate services"
-  cd /opt/checkmate || exit
-  docker-compose up -d
+    # Clean up
+    rm -f /tmp/checkmate.zip
 
-  # Record the installation
-  CHECKMATE_VERSION="$(date +%Y%m%d)"
-  echo "${CHECKMATE_VERSION}" >"/opt/checkmate_version.txt"
-
-  msg_ok "Installed Checkmate"
+    msg_ok "Installed Checkmate"
+  fi
 }
+
+msg_info "Installing Checkmate"
+
+# Create directory for Checkmate
+mkdir -p /opt/checkmate
+
+# Download the docker-compose.yaml file
+msg_info "Downloading Docker Compose configuration"
+curl -fsSL "https://raw.githubusercontent.com/bluewave-labs/Checkmate/develop/docker/dist-mono/docker-compose.yaml" -o "/opt/checkmate/docker-compose.yaml"
+
+# Modify docker-compose.yaml to set environment variables
+msg_info "Configuring Docker Compose for external access"
+
+# Get the IP address of the host
+HOST_IP=$(hostname -I | awk '{print $1}')
+
+# Update the docker-compose.yaml file to use 0.0.0.0 binding for ports
+# and update environment variables to use the host IP
+sed -i "s/- \".*:52345\"/- \"0.0.0.0:52345:52345\"/" /opt/checkmate/docker-compose.yaml
+sed -i "s/- UPTIME_APP_API_BASE_URL=.*/- UPTIME_APP_API_BASE_URL=http:\/\/${HOST_IP}:52345\/api\/v1/" /opt/checkmate/docker-compose.yaml
+sed -i "s/- UPTIME_APP_CLIENT_HOST=.*/- UPTIME_APP_CLIENT_HOST=http:\/\/${HOST_IP}/" /opt/checkmate/docker-compose.yaml
+sed -i "s/- CLIENT_HOST=.*/- CLIENT_HOST=http:\/\/${HOST_IP}/" /opt/checkmate/docker-compose.yaml
+
+# Make sure the data directory exists with proper permissions
+mkdir -p /opt/checkmate/data
+chmod 777 /opt/checkmate/data
+
+# Start Checkmate services
+msg_info "Starting Checkmate services"
+cd /opt/checkmate || exit
+docker-compose up -d
+
+# Record the installation
+CHECKMATE_VERSION="$(date +%Y%m%d)"
+echo "${CHECKMATE_VERSION}" >"/opt/checkmate_version.txt"
+
+msg_ok "Installed Checkmate"
 
 install_docker
 install_checkmate
 
-# Save credentials to a file
-{
-  echo "Application-Credentials"
-  echo "URL: http://$(hostname -I | awk '{print $1}'):8080"
-  echo "Email: admin@example.com"
-  echo "Password: password"
-} >>~/checkmate.creds
-
 motd_ssh
-customize
 
 msg_info "Cleaning up"
 $STD apt-get -y autoremove
