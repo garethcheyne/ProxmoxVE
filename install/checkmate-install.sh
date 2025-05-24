@@ -78,13 +78,6 @@ function install_checkmate() {
 
 install_docker
 install_checkmate
-msg_info "Checkmate Installation Complete"
-echo -e "${INFO}${YW}Checkmate is now available at:${CL}"
-echo -e "${TAB}${BGN}http://$(hostname -I | awk '{print $1}'):8080${CL}"
-echo -e "${INFO}${YW}Default login credentials:${CL}"
-echo -e "${TAB}Email: admin@example.com"
-echo -e "${TAB}Password: password"
-echo -e "${WARNING}${RD}Please change the default password immediately!${CL}"
 
 # Save credentials to a file
 {
